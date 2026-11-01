@@ -51,8 +51,9 @@ Trophies and the non-visual slots are not carried.
 
 ## Looks (`v` and `f`)
 
-Both keys are on since 0.2.0 (`GearPreview.LINK_LOOKS` in `GearPreview.lua`).
-A page older than 2026-11-01 rejects a link that carries them as malformed.
+Both keys are off in this version: `GearPreview.LINK_LOOKS` is `false` in
+`GearPreview.lua`, and the addon builds links without them. Setting it to
+`true` adds them once the page reads them.
 
 `v=` is the helm, cloak and heraldry setting, three digits in that order, `1`
 for shown. `v=101` is helm shown, cloak hidden, heraldry shown.

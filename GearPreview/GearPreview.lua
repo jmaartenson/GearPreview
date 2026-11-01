@@ -35,7 +35,7 @@ GP.BARBER_ANCHOR = "EA_Window_BarbershopMainCheckOutButton"
 
 -- true adds v= (helm, cloak and heraldry shown) and f= (barber face
 -- features) to the link. Keep false until the scryTome page reads both keys.
-GP.LINK_LOOKS = true
+GP.LINK_LOOKS = false
 
 -- The last VISIBLE_EQUIPMENT_UPDATED payload this session:
 -- { helm = bool, cloak = bool, heraldry = bool }, or nil before the first.
