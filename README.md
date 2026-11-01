@@ -1,46 +1,15 @@
 # GearPreview
 
-Source for the GearPreview addon for Return of Reckoning. The addon package is the `GearPreview/` folder; the site builds each release from it.
-
-GearPreview adds a **scryTome Gear Preview** button to the character window and the barber window. It builds a link to the [scryTome Gear Preview](https://scrytome.org/ror-gear-preview/) with your career, your worn items, their dyes and any appearance you applied to them, so you can see your look in a browser and share it.
+A button on the character window and the barber window that builds a link to the [scryTome Gear Preview](https://scrytome.org/ror-gear-preview/), where you see and share your character in the gear you wear.
 
 ## Install
 
-Install it from the [addon site](https://addons.returnofreckoning.com/addons/gearpreview) or the launcher. By hand: put the `GearPreview` folder in the game's `Interface\AddOns` folder and start the game.
+From the [addon site](https://addons.returnofreckoning.com/addons/gearpreview) or the launcher, or copy the `GearPreview` folder into `Interface\AddOns`.
 
 ## Use
 
-1. Open the character window and press the scryTome Gear Preview icon in its title bar, or type `/gp`. At a barber, the same icon sits right of Reset and Check Out.
-2. The window shows your name, how many items the link holds and the link, already selected. Press Ctrl+A, Ctrl+C. If the game cannot read an item, the addon leaves it out and says so in chat.
-3. Paste the link into a browser.
+Press the icon or type `/gp`, copy the link, open it in a browser.
 
-The window closes with the button, `/gp`, Close or Escape.
+The link holds your gear, dyes, appearances and helm and cloak settings. Visit a barber once per session and it holds your face, hair and beard too. The addon saves nothing and sends nothing.
 
-## What the link carries
-
-- Career, sex and name.
-- Every item in a visible slot: helm, shoulders, body, gloves, belt, boots, cloak, main hand, off hand, ranged. Banner, pockets, accessories and the event slot are not visible on the figure and are left out.
-- Both dye colours of each item.
-- An appearance applied to an item: the figure wears that look; the item stays the one you wear.
-
-The addon also reads your Show Helm, Show Cloak and heraldry settings, and your face, hair and the other creator choices when a barber is open, since the barber is the only place the game reports them. The link carries them, and the page sets your looks and the helm and cloak toggles from them. Barber looks stay until you log out or reload the UI.
-
-The addon reads the game's equipment data, the helm and cloak settings and what the barber reports. It saves nothing, sends nothing and writes no files.
-
-## Status
-
-The page reads these links since 2026-11-01 and opens your character with the worn items, dyes and appearances the link carries.
-
-The link grammar and the measured slot and career tables are in [docs/link.md](docs/link.md).
-
-## Contributing
-
-Open an issue to discuss a change, then fork and submit a pull request. Keep the package layout intact and say how the change was checked in game.
-
-## Publishing
-
-The addon site is linked to this repository and packages each pushed version tag (`v0.1.0`, `v0.2.0-beta.1`). It writes the version and release date into `GearPreview.mod`, so the source keeps `version="@project-version@"` and `date="@project-date@"`.
-
-## License
-
-MIT, see [LICENSE](LICENSE).
+Developer notes: [docs/link.md](docs/link.md). Releases are the pushed `v*` tags. MIT license.
