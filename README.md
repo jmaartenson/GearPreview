@@ -6,7 +6,7 @@ GearPreview adds a **scryTome Gear Preview** button to the character window. It 
 
 ## Install
 
-Install it from the [addon site](https://addons.returnofreckoning.com/) or the launcher. By hand: put the `GearPreview` folder in the game's `Interface\AddOns` folder and start the game.
+Install it from the [addon site](https://addons.returnofreckoning.com/addons/gearpreview) or the launcher. By hand: put the `GearPreview` folder in the game's `Interface\AddOns` folder and start the game.
 
 ## Use
 
