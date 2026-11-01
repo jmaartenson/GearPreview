@@ -1,0 +1,159 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to release, such as v0.2.1
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ inputs.tag || github.ref_name }}
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
+    steps:
+      - name: Check out the tag
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: refs/tags/${{ inputs.tag || github.ref_name }}
+
+      - name: Read the version and the notes
+        id: notes
+        run: |
+          set -euo pipefail
+          version="${TAG#v}"
+          semver='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$'
+          if [ "$version" = "$TAG" ] || ! printf '%s\n' "$version" | grep -Eq "$semver"; then
+            echo "::error::Tag $TAG is not v followed by a semver version."
+            exit 1
+          fi
+          notes="$RUNNER_TEMP/notes.md"
+          awk -v v="$version" '
+            $0 == "## " v { found = 1; next }
+            found && /^## / { exit }
+            found { lines[++n] = $0 }
+            END {
+              s = 1; while (s <= n && lines[s] ~ /^[[:space:]]*$/) s++
+              e = n; while (e >= s && lines[e] ~ /^[[:space:]]*$/) e--
+              for (i = s; i <= e; i++) print lines[i]
+            }
+          ' CHANGELOG.md > "$notes"
+          if [ ! -s "$notes" ]; then
+            echo "::error::CHANGELOG.md has no '## $version' section."
+            exit 1
+          fi
+          cat "$notes"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "notes=$notes" >> "$GITHUB_OUTPUT"
+
+      - name: Build the zip
+        id: zip
+        env:
+          VERSION: ${{ steps.notes.outputs.version }}
+        run: |
+          set -euo pipefail
+          stage="$RUNNER_TEMP/stage"
+          zip_path="$RUNNER_TEMP/GearPreview-$VERSION.zip"
+          rm -rf "$stage" "$zip_path"
+          mkdir -p "$stage/GearPreview"
+          cp GearPreview.mod GearPreview.lua GearPreview.xml README.md LICENSE "$stage/GearPreview/"
+          cp -R Textures "$stage/GearPreview/"
+          sed -i -e "s/@project-version@/$VERSION/g" -e "s/@project-date@/$(date -u +%Y-%m-%d)/g" "$stage/GearPreview/GearPreview.mod"
+          if grep -q '@project-' "$stage/GearPreview/GearPreview.mod"; then
+            echo "::error::GearPreview.mod still holds a placeholder."
+            exit 1
+          fi
+          (cd "$stage" && zip -X -D -r "$zip_path" GearPreview/GearPreview.mod GearPreview/GearPreview.lua GearPreview/GearPreview.xml GearPreview/Textures GearPreview/README.md GearPreview/LICENSE)
+          unzip -l "$zip_path"
+          echo "path=$zip_path" >> "$GITHUB_OUTPUT"
+
+      - name: Publish the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          VERSION: ${{ steps.notes.outputs.version }}
+          NOTES: ${{ steps.notes.outputs.notes }}
+          ZIP: ${{ steps.zip.outputs.path }}
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh release upload "$TAG" "$ZIP" --clobber
+            gh release edit "$TAG" --notes-file "$NOTES"
+          else
+            gh release create "$TAG" "$ZIP" --verify-tag --title "GearPreview $VERSION" --notes-file "$NOTES"
+          fi
+
+      - name: Upload to the addon site
+        env:
+          ROR_TOKEN: ${{ secrets.ROR_TOKEN }}
+          ROR_ADDON: ${{ vars.ROR_ADDON }}
+          VERSION: ${{ steps.notes.outputs.version }}
+          NOTES: ${{ steps.notes.outputs.notes }}
+          ZIP: ${{ steps.zip.outputs.path }}
+        run: |
+          set -euo pipefail
+          if [ -z "${ROR_TOKEN:-}" ]; then
+            echo "The ROR_TOKEN secret is not set, so the zip is not uploaded to the addon site."
+            exit 0
+          fi
+          if [ -z "${ROR_ADDON:-}" ]; then
+            echo "::error::The ROR_ADDON variable is not set."
+            exit 1
+          fi
+          site="https://addons.returnofreckoning.com"
+          api="$site/api/v1/addons/$ROR_ADDON/releases"
+          reply="$RUNNER_TEMP/upload.json"
+          code=$(curl -sS -o "$reply" -w '%{http_code}' \
+            -H "Authorization: Bearer $ROR_TOKEN" -H "Accept: application/json" \
+            -F "version=$VERSION" -F "package=@$ZIP" -F "changelog_md=<$NOTES" \
+            "$api")
+          cat "$reply"; echo
+          if [ "$code" != "202" ]; then
+            echo "::error::The upload returned HTTP $code."
+            exit 1
+          fi
+          # The status URL from the reply, or the documented one.
+          status_url=$(jq -r '[.. | strings | select(test("/status$"))][0] // empty' "$reply" 2> /dev/null || true)
+          case "$status_url" in
+            "") status_url="$api/$VERSION/status" ;;
+            /*) status_url="$site$status_url" ;;
+          esac
+          body="$RUNNER_TEMP/status.json"
+          state=""
+          for attempt in $(seq 1 60); do
+            sleep 10
+            rm -f "$body"
+            code=$(curl -sS -o "$body" -w '%{http_code}' \
+              -H "Authorization: Bearer $ROR_TOKEN" -H "Accept: application/json" \
+              "$status_url" || true)
+            if [ "$code" = "401" ] || [ "$code" = "403" ]; then
+              cat "$body"; echo
+              echo "::error::The status check returned HTTP $code. The token needs the releases:read scope."
+              exit 1
+            fi
+            state=$(jq -r '[.data.pipeline.status, .data.pipeline_status, .data.status, .pipeline.status, .status]
+              | map(select(type == "string")) | (.[0] // "") | ascii_downcase' "$body" 2> /dev/null || true)
+            echo "Check $attempt: HTTP ${code:-none}, status '${state:-none}'"
+            case "$state" in
+              failed|failure|error|errored|rejected|invalid|quarantined|blocked|cancelled|canceled)
+                cat "$body"; echo
+                echo "::error::The addon site reports '$state'."
+                exit 1 ;;
+              published|passed|succeeded|success|complete|completed|done|approved|ready|unpublished|pending_review|awaiting_review|in_review|review)
+                cat "$body"; echo
+                echo "The addon site finished with '$state'."
+                exit 0 ;;
+            esac
+          done
+          cat "$body"; echo
+          echo "::error::The addon site did not finish within 10 minutes (last status '${state:-none}')."
+          exit 1

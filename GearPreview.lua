@@ -18,7 +18,8 @@ GP.BUTTON = "GearPreviewButton"
 GP.BUTTON_TEMPLATE = "GearPreviewButtonTemplate"
 GP.PARENT = "CharacterWindow"
 GP.TITLE_BAR = "CharacterWindowTitleBar"
--- Left of ClosetGoblin's title bar icon (36 wide at -76), with a 4 gap.
+-- 116 left of the title bar's right edge, which leaves room for one more
+-- 36 wide icon at -76 beside the close button.
 GP.BUTTON_X = -116
 -- The button face: the addon's own 36x36 icon, GearPreviewIcon in the XML.
 GP.ICON = "GearPreviewIcon"

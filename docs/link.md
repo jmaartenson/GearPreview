@@ -1,11 +1,10 @@
 # Addon link contract (`#eq=`)
 
-Producer: the GearPreview addon (`GearPreview/`). Consumer: the scryTome Gear Preview page. The page reads `c`, `s`, `n` and `i` since 2026-11-01: it shows each item under its own name, and an appearance override's look on the figure while the worn item keeps its identity. It rejects any other key as a malformed link, so the addon leaves out `v` and `f` until the page reads them (see [Looks](#looks-v-and-f)).
+Producer: the GearPreview addon (this repository). Consumer: the scryTome Gear Preview page, which reads every key below. It shows each item under its own name, and an appearance override's look on the figure while the worn item keeps its identity.
 
-The slot, career, sex and name tables below are dumps of the live client (Main
-install, an Archmage, rank 40) taken through the `ror-main` MCP server on
-2026-10-31. The looks were measured on 2026-11-01 on a male Witch Hunter. The
-commands and raw results are kept with the maintainer's evidence for the addon.
+The slot, career, sex and name tables below are dumps of the live client (an
+Archmage, rank 40) taken on 2026-10-31. The looks were measured on 2026-11-01
+on a male Witch Hunter.
 
 ## Grammar
 

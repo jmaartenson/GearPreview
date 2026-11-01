@@ -8,11 +8,11 @@
             The paperdoll button: a 36x36 icon, the height of
             CharacterWindowTitleBar. Lua creates it from this template as a
             child of CharacterWindow and anchors it in the title bar's right
-            side, 116 left of its right edge: ClosetGoblin puts its 36x36 icon
-            at 76 left of the same edge (the close button takes the corner),
-            so this one sits 4 left of it, clear of the figure and of every
-            slot. The face is the addon's own icon (GearPreviewIcon, set in
-            Lua), 36x36 in the client's icon frame; the name is in the tooltip.
+            side, 116 left of its right edge. That leaves room for one more
+            36x36 icon at 76 left of the edge, beside the close button, and
+            keeps it clear of the figure and of every slot. The face is the
+            addon's own icon (GearPreviewIcon, set in Lua), 36x36 in the
+            client's icon frame; the name is in the tooltip.
 
             The barber button: Lua creates a second one from this template as
             a child of EA_Window_BarbershopMain, the frame of the stock barber

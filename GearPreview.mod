@@ -3,7 +3,7 @@
     <UiMod name="GearPreview" version="@project-version@" date="@project-date@" autoenabled="true">
         <VersionSettings gameVersion="1.4.8" windowsVersion="1.0" savedVariablesVersion="1.0" />
         <Author name="Wholdar" email="" />
-        <Description text="Adds a scryTome Gear Preview button to the character window and the barber window. It builds a link to the scryTome Gear Preview with your worn items, dyes and appearance overrides." />
+        <Description text="A button on the character window and the barber window that builds a link to your character in the scryTome Gear Preview." />
         <WARInfo>
             <Categories>
                 <Category name="ITEMS_INVENTORY" />

@@ -4,7 +4,7 @@ A button on the character window and the barber window that builds a link to the
 
 ## Install
 
-From the [addon site](https://addons.returnofreckoning.com/addons/gearpreview) or the launcher, or copy the `GearPreview` folder into `Interface\AddOns`.
+From the [addon site](https://addons.returnofreckoning.com/addons/gearpreview) or the launcher, or unzip a [GitHub release](https://github.com/jmaartenson/GearPreview/releases) into `Interface\AddOns`.
 
 ## Use
 
@@ -12,4 +12,8 @@ Press the icon or type `/gp`, copy the link, open it in a browser.
 
 The link holds your gear, dyes, appearances and helm and cloak settings. Visit a barber once per session and it holds your face, hair and beard too. The addon saves nothing and sends nothing.
 
-Developer notes: [docs/link.md](docs/link.md). Releases are the pushed `v*` tags. MIT license.
+## Releases
+
+Pushing a `v*` tag builds the zip and publishes a GitHub Release; the addon site imports the tag. The build writes the version and date into `GearPreview.mod`. Changes per version are in [CHANGELOG.md](https://github.com/jmaartenson/GearPreview/blob/main/CHANGELOG.md).
+
+Developer notes: [docs/link.md](https://github.com/jmaartenson/GearPreview/blob/main/docs/link.md). MIT license.
