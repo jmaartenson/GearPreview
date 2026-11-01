@@ -6,7 +6,7 @@
         <Description text="Adds a scryTome Gear Preview button to the character window and the barber window. It builds a link to the scryTome Gear Preview with your worn items, dyes and appearance overrides." />
         <WARInfo>
             <Categories>
-                <Category name="UTILITY" />
+                <Category name="ITEMS_INVENTORY" />
             </Categories>
         </WARInfo>
         <Dependencies>
