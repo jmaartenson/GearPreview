@@ -14,6 +14,6 @@ The link holds your gear, dyes, appearances and helm and cloak settings. Visit a
 
 ## Releases
 
-Pushing a `v*` tag builds the zip and publishes a GitHub Release; the addon site imports the tag. The build writes the version and date into `GearPreview.mod`. Changes per version are in [CHANGELOG.md](https://github.com/jmaartenson/GearPreview/blob/main/CHANGELOG.md).
+The addon site imports each pushed `v*` tag and writes the version and date into `GearPreview.mod`. Changes per version are in [CHANGELOG.md](https://github.com/jmaartenson/GearPreview/blob/main/CHANGELOG.md).
 
 Developer notes: [docs/link.md](https://github.com/jmaartenson/GearPreview/blob/main/docs/link.md). MIT license.
