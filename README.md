@@ -23,7 +23,7 @@ The window closes with the button, `/gp`, Close or Escape.
 - Both dye colours of each item.
 - An appearance applied to an item: the figure wears that look; the item stays the one you wear.
 
-The addon also reads your Show Helm, Show Cloak and heraldry settings, and your face, hair and the other creator choices when a barber is open, since the barber is the only place the game reports them. The page does not read them yet, so this version leaves them out of the link. Barber looks stay until you log out or reload the UI.
+The addon also reads your Show Helm, Show Cloak and heraldry settings, and your face, hair and the other creator choices when a barber is open, since the barber is the only place the game reports them. The link carries them, and the page sets your looks and the helm and cloak toggles from them. Barber looks stay until you log out or reload the UI.
 
 The addon reads the game's equipment data, the helm and cloak settings and what the barber reports. It saves nothing, sends nothing and writes no files.
 
