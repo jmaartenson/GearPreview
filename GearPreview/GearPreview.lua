@@ -362,44 +362,17 @@ function GP.BuildLink()
     return link, info
 end
 
+-- The window's one status line: "9 items", plus "with your barber looks"
+-- when f= is in the link.
 local function countText(info)
     local text
-    if info.equipmentUnreadable then
-        text = "The equipment could not be read; the link has no items."
-    elseif info.items == 1 then
-        text = "1 item in the link."
+    if info.items == 1 then
+        text = "1 item"
     else
-        text = info.items .. " items in the link."
+        text = info.items .. " items"
     end
-    if info.skipped == 1 then
-        text = text .. " 1 slot left out: its data could not be read."
-    elseif info.skipped > 1 then
-        text = text .. " " .. info.skipped .. " slots left out: their data could not be read."
-    end
-    if info.looksKeys and info.visibility and not info.visibilityFromEvent then
-        text = text .. " Helm and cloak may be out of date until you toggle one."
-    end
+    if info.features then text = text .. " with your barber looks" end
     return text
-end
-
-local function shown(value)
-    if value then return "shown" end
-    return "hidden"
-end
-
-local function looksText(info)
-    if not info.looksKeys then return "" end
-    local text
-    local flags = info.visibility
-    if flags then
-        text = "Helm " .. shown(flags.helm) .. ", cloak " .. shown(flags.cloak) .. ", heraldry " .. shown(flags.heraldry) .. "."
-    else
-        text = "Helm and cloak settings could not be read."
-    end
-    if info.features then
-        return text .. " Looks from the barber: yes."
-    end
-    return text .. " Looks from the barber: no, visit a barber to capture them."
 end
 
 ----------------------------------------------------------------
@@ -408,7 +381,7 @@ end
 
 local function printLine(text)
     if type(EA_ChatWindow) == "table" and type(EA_ChatWindow.Print) == "function" then
-        pcall(EA_ChatWindow.Print, towstring("[Gear Preview] " .. text))
+        pcall(EA_ChatWindow.Print, towstring("Gear Preview: " .. text))
     end
 end
 
@@ -426,6 +399,36 @@ local function ensureWindow()
     return call(DoesWindowExist, w) == true
 end
 
+-- The window's vertical layout, in unscaled pixels: Count starts at 80 and
+-- is at least 24 high, the link box (120 high) starts 6 below it, and 90
+-- below the box hold the hint and the Close button. With a one-line count
+-- the window is 320 high, as in 0.1.0.
+local TEXT_X, TEXT_WIDTH, COUNT_Y, LINE_HEIGHT = 25, 470, 80, 24
+local LINK_GAP, LINK_HEIGHT, FOOTER, WINDOW_WIDTH = 6, 120, 90, 520
+
+-- Sets a wrapping label's text, sizes it to the text (the client measures
+-- the wrapped height) and returns that height.
+local function fitLabel(label, top, text)
+    call(WindowClearAnchors, label)
+    call(WindowAddAnchor, label, "topleft", GP.WINDOW, "topleft", TEXT_X, top)
+    call(WindowSetDimensions, label, TEXT_WIDTH, LINE_HEIGHT)
+    call(LabelSetText, label, towstring(text))
+    local _, height = call(LabelGetTextDimensions, label)
+    if type(height) ~= "number" or height < LINE_HEIGHT then height = LINE_HEIGHT end
+    height = math.ceil(height)
+    call(WindowSetDimensions, label, TEXT_WIDTH, height)
+    return height
+end
+
+-- Puts the link box under Count and sizes the window to them.
+local function layout(info)
+    local w = GP.WINDOW
+    local y = COUNT_Y + fitLabel(w .. "Count", COUNT_Y, countText(info)) + LINK_GAP
+    call(WindowClearAnchors, w .. "Link")
+    call(WindowAddAnchor, w .. "Link", "topleft", w, "topleft", TEXT_X, y)
+    call(WindowSetDimensions, w, WINDOW_WIDTH, y + LINK_HEIGHT + FOOTER)
+end
+
 function GP.Open()
     if not ensureWindow() then return false end
     local w = GP.WINDOW
@@ -434,12 +437,18 @@ function GP.Open()
         link, info = GP.BASE_URL, { items = 0, skipped = 0, equipmentUnreadable = true }
     end
     call(LabelSetText, w .. "Name", info.nameWide or towstring("Unknown character"))
-    call(LabelSetText, w .. "Count", towstring(countText(info)))
-    call(LabelSetText, w .. "Looks", towstring(looksText(info)))
+    layout(info)
     call(TextEditBoxSetText, w .. "Link", towstring(link))
     call(WindowSetShowing, w, true)
     call(WindowAssignFocus, w .. "Link", true)
     call(TextEditBoxSelectAll, w .. "Link")
+    if info.equipmentUnreadable then
+        printLine("The equipment could not be read.")
+    elseif info.skipped == 1 then
+        printLine("1 slot left out.")
+    elseif info.skipped > 1 then
+        printLine(info.skipped .. " slots left out.")
+    end
     if not announced then
         announced = true
         printLine("Link ready. Press Ctrl+A, Ctrl+C in the window and paste it into a browser.")

@@ -11,7 +11,7 @@ Install it from the [addon site](https://addons.returnofreckoning.com/addons/gea
 ## Use
 
 1. Open the character window and press the scryTome Gear Preview icon in its title bar, or type `/gp`. At a barber, the same icon sits right of Reset and Check Out.
-2. The window shows your name, how many items the link holds and the link, already selected. Press Ctrl+A, Ctrl+C.
+2. The window shows your name, how many items the link holds and the link, already selected. Press Ctrl+A, Ctrl+C. If the game cannot read an item, the addon leaves it out and says so in chat.
 3. Paste the link into a browser.
 
 The window closes with the button, `/gp`, Close or Escape.

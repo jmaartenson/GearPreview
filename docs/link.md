@@ -44,8 +44,8 @@ appearanceName = url-encoded name of the applied appearance
   unreserved characters `A-Z a-z 0-9 - . _ ~` becomes `%XX` (upper-case hex).
   A space is `%20`. The client holds names as UTF-16; the addon converts
   surrogate pairs to one character and a lone surrogate to U+FFFD.
-- An item whose id or dyes cannot be read is left out, and the addon window
-  says how many slots were left out.
+- An item whose id or dyes cannot be read is left out, and the addon prints
+  how many in chat (`Gear Preview: 1 slot left out.`).
 
 Trophies and the non-visual slots are not carried.
 
@@ -68,8 +68,7 @@ for shown. `v=101` is helm shown, cloak hidden, heraldry shown.
   `IsShowingCloakHeraldry()` also exist, but they lag: with the cloak hidden
   in the world, the cloak getter kept answering `true` for minutes.
 - `/reloadui` sends no event (measured: none arrived after a reload). Until
-  the next toggle the addon reads the getters, and the window says the helm
-  and cloak may be out of date.
+  the next toggle the addon reads the getters.
 - If a value cannot be read, `v=` is left out.
 
 `f=` is the face, hair and other creator choices, as the barber reports them.
