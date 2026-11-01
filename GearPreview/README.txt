@@ -6,6 +6,6 @@ Install: put the GearPreview folder in the game's Interface\AddOns folder and st
 
 Use: open the character window and press the scryTome Gear Preview icon in its title bar, or type /gp. At a barber, the icon sits right of Reset and Check Out. Press Ctrl+A, Ctrl+C in the window and paste the link into a browser.
 
-The addon also reads your Show Helm, Show Cloak and heraldry settings, and your face, hair and other creator choices while a barber is open. The page does not read them yet, so this version leaves them out of the link.
+The addon also reads your Show Helm, Show Cloak and heraldry settings, and your face, hair and other creator choices while a barber is open. The link carries them and the page uses them.
 
 Source and issues: https://github.com/jmaartenson/GearPreview
