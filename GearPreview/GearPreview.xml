@@ -13,6 +13,14 @@
             so this one sits 4 left of it, clear of the figure and of every
             slot. The face is the addon's own icon (GearPreviewIcon, set in
             Lua), 36x36 in the client's icon frame; the name is in the tooltip.
+
+            The barber button: Lua creates a second one from this template as
+            a child of EA_Window_BarbershopMain, the frame of the stock barber
+            window, so it shows and hides with the barber. Its left edge's
+            middle sits 10 right of the Check Out button's top right corner,
+            which centres it on the Reset and Check Out pair (Reset sits on top
+            of Check Out), below the mirror and left of the feature combo
+            boxes, which start at x 915 of the 1530 wide frame.
         -->
         <Button name="GearPreviewButtonTemplate" layer="popup" handleinput="true">
             <Size><AbsPoint x="36" y="36" /></Size>
@@ -43,9 +51,13 @@
             </Windows>
         </Button>
 
-        <!-- The link window. Movable, saves no settings, created on first open. -->
+        <!--
+            The link window. Movable, saves no settings, created on first
+            open. Count and Looks wrap to two lines; Looks stays empty while
+            GearPreview.LINK_LOOKS is false.
+        -->
         <Window name="GearPreviewWindow" inherits="EA_Window_Default" movable="true" savesettings="false" handleinput="true" layer="secondary" show="false">
-            <Size><AbsPoint x="520" y="320" /></Size>
+            <Size><AbsPoint x="520" y="380" /></Size>
             <Anchors><Anchor point="center" relativePoint="center" relativeTo="Root" /></Anchors>
             <EventHandlers>
                 <EventHandler event="OnKeyEscape" function="GearPreview.Close" />
@@ -62,16 +74,22 @@
                         <Anchor point="topleft" relativePoint="topleft" relativeTo="$parent"><AbsPoint x="25" y="50" /></Anchor>
                     </Anchors>
                 </Label>
-                <Label name="$parentCount" inherits="EA_Label_DefaultText" textalign="left" handleinput="false" wordwrap="false">
-                    <Size><AbsPoint x="470" y="24" /></Size>
+                <Label name="$parentCount" inherits="EA_Label_DefaultText" textalign="left" handleinput="false" wordwrap="true">
+                    <Size><AbsPoint x="470" y="44" /></Size>
                     <Anchors>
-                        <Anchor point="topleft" relativePoint="topleft" relativeTo="$parent"><AbsPoint x="25" y="80" /></Anchor>
+                        <Anchor point="topleft" relativePoint="topleft" relativeTo="$parent"><AbsPoint x="25" y="78" /></Anchor>
+                    </Anchors>
+                </Label>
+                <Label name="$parentLooks" inherits="EA_Label_DefaultText" textalign="left" handleinput="false" wordwrap="true">
+                    <Size><AbsPoint x="470" y="44" /></Size>
+                    <Anchors>
+                        <Anchor point="topleft" relativePoint="topleft" relativeTo="$parent"><AbsPoint x="25" y="122" /></Anchor>
                     </Anchors>
                 </Label>
                 <EditBox name="$parentLink" inherits="EA_EditBox_DefaultFrame_Multiline" scrolling="vert" scrollbar="EA_ScrollBar_DefaultVerticalChain" handleinput="true" maxchars="4000" font="font_default_text_small">
                     <Size><AbsPoint x="470" y="120" /></Size>
                     <Anchors>
-                        <Anchor point="topleft" relativePoint="topleft" relativeTo="$parent"><AbsPoint x="25" y="110" /></Anchor>
+                        <Anchor point="topleft" relativePoint="topleft" relativeTo="$parent"><AbsPoint x="25" y="170" /></Anchor>
                     </Anchors>
                     <EventHandlers>
                         <EventHandler event="OnKeyEscape" function="GearPreview.Close" />

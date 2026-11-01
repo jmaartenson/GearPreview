@@ -1,15 +1,17 @@
 ----------------------------------------------------------------
--- GearPreview: a character window button that builds a link to the
--- scryTome Gear Preview (https://scrytome.org/ror-gear-preview/) from the
--- worn items, their dyes and their appearance overrides.
--- Contract: docs/addon-link.md in the ror-gear-preview repository.
+-- GearPreview: a button on the character window and the barber window
+-- that builds a link to the scryTome Gear Preview
+-- (https://scrytome.org/ror-gear-preview/) from the worn items, their dyes,
+-- their appearance overrides, the helm and cloak settings and the face
+-- features the barber reports.
+-- Contract: docs/link.md.
 -- No network, no file writes, no saved settings.
 ----------------------------------------------------------------
 
 GearPreview = GearPreview or {}
 local GP = GearPreview
 
-GP.VERSION = "0.1.0"
+GP.VERSION = "0.2.0"
 GP.BASE_URL = "https://scrytome.org/ror-gear-preview/"
 GP.WINDOW = "GearPreviewWindow"
 GP.BUTTON = "GearPreviewButton"
@@ -20,6 +22,29 @@ GP.TITLE_BAR = "CharacterWindowTitleBar"
 GP.BUTTON_X = -116
 -- The button face: the addon's own 36x36 icon, GearPreviewIcon in the XML.
 GP.ICON = "GearPreviewIcon"
+
+-- The same button on the stock barber window (EA_BarbershopWindow). The
+-- window is EA_Window_Barbershop; its frame is EA_Window_BarbershopMain. The
+-- button is a child of the frame, so it shows and hides with it, and sits
+-- 10 right of the Check Out button's top right corner: beside the Reset and
+-- Check Out pair, below the mirror and left of the feature combo boxes.
+GP.BARBER_BUTTON = "GearPreviewBarberButton"
+GP.BARBER_WINDOW = "EA_Window_Barbershop"
+GP.BARBER_PARENT = "EA_Window_BarbershopMain"
+GP.BARBER_ANCHOR = "EA_Window_BarbershopMainCheckOutButton"
+
+-- true adds v= (helm, cloak and heraldry shown) and f= (barber face
+-- features) to the link. Keep false until the scryTome page reads both keys.
+GP.LINK_LOOKS = false
+
+-- The last VISIBLE_EQUIPMENT_UPDATED payload this session:
+-- { helm = bool, cloak = bool, heraldry = bool }, or nil before the first.
+GP.visibility = nil
+-- Barber captures by character name, kept in memory for this session only:
+-- the addon has no saved variables, so /reloadui and logging out clear them.
+-- looks[name] = { worn = capture, shown = capture }, where a capture is
+-- { line = "9", gender = "1", values = { "0", "7", ... } }.
+GP.looks = {}
 
 -- The last link built, for scripts and checks: GearPreview.link
 GP.link = nil
@@ -219,6 +244,47 @@ local function careerKey()
     return nil
 end
 
+local function digit(value)
+    if value == true then return "1" end
+    if value == false then return "0" end
+    return nil
+end
+
+-- The helm, cloak and heraldry flags: the last event payload, or the
+-- client getters before the first event (they can be stale). Returns the
+-- "v=" value or nil, the flags and whether they came from the event.
+local function visibilityValue()
+    local flags = GP.visibility
+    local fromEvent = flags ~= nil
+    if not flags then
+        flags = {
+            helm = call(GetEquippedItemVisible, slotNumber({ name = "HELM", slot = 9 })),
+            cloak = call(GetEquippedItemVisible, slotNumber({ name = "BACK", slot = 13 })),
+            heraldry = call(IsShowingCloakHeraldry),
+        }
+    end
+    local a, b, c = digit(flags.helm), digit(flags.cloak), digit(flags.heraldry)
+    if not a or not b or not c then return nil, nil, fromEvent end
+    return a .. b .. c, flags, fromEvent
+end
+
+local function barberShowing()
+    return call(DoesWindowExist, GP.BARBER_WINDOW) == true and call(WindowGetShowing, GP.BARBER_WINDOW) == true
+end
+
+-- The barber capture for this character: what the mirror shows while the
+-- barber is open, otherwise the looks the character wears. Returns the
+-- "f=" value or nil.
+local function looksValue()
+    local name = playerName()
+    local record = name and GP.looks[name]
+    if not record then return nil end
+    local capture = record.worn
+    if barberShowing() and record.shown then capture = record.shown end
+    if not capture then return nil end
+    return capture.line .. "." .. capture.gender .. "." .. table.concat(capture.values, ",")
+end
+
 -- One "i=" value for a worn item; otherwise nil and "empty" or "unreadable".
 local function itemEntry(key, data)
     if type(data) ~= "table" then return nil, "empty" end
@@ -240,7 +306,9 @@ local function itemEntry(key, data)
 end
 
 -- Builds the link from the live client. Returns the link and a table with
--- items, skipped, career, sex, name (UTF-8), nameWide and length (fragment).
+-- items, skipped, career, sex, name (UTF-8), nameWide and length (fragment);
+-- with GP.LINK_LOOKS also looksKeys, visibility, visibilityFromEvent and
+-- features (the "f=" value or nil).
 function GP.BuildLink()
     local info = { items = 0, skipped = 0 }
     local parts = { "eq=1" }
@@ -261,6 +329,15 @@ function GP.BuildLink()
 
     info.name, info.nameWide = name, nameWide
     if name and name ~= "" then parts[#parts + 1] = "n=" .. GP.UrlEncode(name) end
+
+    if GP.LINK_LOOKS then
+        info.looksKeys = true
+        local visible, flags, fromEvent = visibilityValue()
+        info.visibility, info.visibilityFromEvent = flags, fromEvent
+        if visible then parts[#parts + 1] = "v=" .. visible end
+        info.features = looksValue()
+        if info.features then parts[#parts + 1] = "f=" .. info.features end
+    end
 
     local equipment = nil
     if type(DataUtils) == "table" then equipment = call(DataUtils.GetEquipmentData) end
@@ -299,7 +376,30 @@ local function countText(info)
     elseif info.skipped > 1 then
         text = text .. " " .. info.skipped .. " slots left out: their data could not be read."
     end
+    if info.looksKeys and info.visibility and not info.visibilityFromEvent then
+        text = text .. " Helm and cloak may be out of date until you toggle one."
+    end
     return text
+end
+
+local function shown(value)
+    if value then return "shown" end
+    return "hidden"
+end
+
+local function looksText(info)
+    if not info.looksKeys then return "" end
+    local text
+    local flags = info.visibility
+    if flags then
+        text = "Helm " .. shown(flags.helm) .. ", cloak " .. shown(flags.cloak) .. ", heraldry " .. shown(flags.heraldry) .. "."
+    else
+        text = "Helm and cloak settings could not be read."
+    end
+    if info.features then
+        return text .. " Looks from the barber: yes."
+    end
+    return text .. " Looks from the barber: no, visit a barber to capture them."
 end
 
 ----------------------------------------------------------------
@@ -335,6 +435,7 @@ function GP.Open()
     end
     call(LabelSetText, w .. "Name", info.nameWide or towstring("Unknown character"))
     call(LabelSetText, w .. "Count", towstring(countText(info)))
+    call(LabelSetText, w .. "Looks", towstring(looksText(info)))
     call(TextEditBoxSetText, w .. "Link", towstring(link))
     call(WindowSetShowing, w, true)
     call(WindowAssignFocus, w .. "Link", true)
@@ -361,24 +462,42 @@ function GP.Toggle()
 end
 
 ----------------------------------------------------------------
--- The character window button
+-- The buttons
 ----------------------------------------------------------------
 
-function GP.InstallButton()
-    if call(DoesWindowExist, GP.BUTTON) then return true end
-    if not call(DoesWindowExist, GP.PARENT) or not call(DoesWindowExist, GP.TITLE_BAR) then return false end
+-- Creates the button from the template as a child of parent, anchored with
+-- the client's WindowAddAnchor(window, pointOnRelative, relativeTo,
+-- pointOnWindow, x, y).
+local function installButton(name, parent, point, relativeTo, relativePoint, x, y)
+    if call(DoesWindowExist, name) then return true end
+    if not call(DoesWindowExist, parent) or not call(DoesWindowExist, relativeTo) then return false end
     local created = call(function()
-        CreateWindowFromTemplate(GP.BUTTON, GP.BUTTON_TEMPLATE, GP.PARENT)
+        CreateWindowFromTemplate(name, GP.BUTTON_TEMPLATE, parent)
         return true
     end)
-    if not created or not call(DoesWindowExist, GP.BUTTON) then return false end
-    call(WindowClearAnchors, GP.BUTTON)
-    call(WindowAddAnchor, GP.BUTTON, "topright", GP.TITLE_BAR, "topright", GP.BUTTON_X, 0)
-    local scale = call(WindowGetScale, GP.PARENT)
-    if type(scale) == "number" and scale > 0 then call(WindowSetScale, GP.BUTTON, scale) end
-    call(DynamicImageSetTexture, GP.BUTTON .. "Icon", GP.ICON, 0, 0)
-    call(WindowSetShowing, GP.BUTTON, true)
+    if not created or not call(DoesWindowExist, name) then return false end
+    call(WindowClearAnchors, name)
+    call(WindowAddAnchor, name, point, relativeTo, relativePoint, x, y)
+    local scale = call(WindowGetScale, parent)
+    if type(scale) == "number" and scale > 0 then call(WindowSetScale, name, scale) end
+    call(DynamicImageSetTexture, name .. "Icon", GP.ICON, 0, 0)
+    call(WindowSetShowing, name, true)
     return true
+end
+
+function GP.InstallButton()
+    return installButton(GP.BUTTON, GP.PARENT, "topright", GP.TITLE_BAR, "topright", GP.BUTTON_X, 0)
+end
+
+-- The barber window is created the first time a barber opens.
+function GP.InstallBarberButton()
+    return installButton(GP.BARBER_BUTTON, GP.BARBER_PARENT, "topright", GP.BARBER_ANCHOR, "left", 10, 0)
+end
+
+local function setHighlight(button, showing)
+    if call(DoesWindowExist, button .. "Highlight") then
+        call(WindowSetShowing, button .. "Highlight", showing)
+    end
 end
 
 function GP.OnButton()
@@ -386,19 +505,73 @@ function GP.OnButton()
 end
 
 function GP.OnButtonMouseOver()
-    call(WindowSetShowing, GP.BUTTON .. "Highlight", true)
+    local button = get(SystemData, "ActiveWindow", "name")
+    if button ~= GP.BARBER_BUTTON then button = GP.BUTTON end
+    setHighlight(button, true)
     call(function()
-        Tooltips.CreateTextOnlyTooltip(GP.BUTTON, towstring("scryTome Gear Preview: a link to your gear"))
+        Tooltips.CreateTextOnlyTooltip(button, towstring("scryTome Gear Preview: a link to your gear"))
         Tooltips.AnchorTooltip(Tooltips.ANCHOR_WINDOW_TOP)
     end)
 end
 
 function GP.OnButtonMouseOverEnd()
-    call(WindowSetShowing, GP.BUTTON .. "Highlight", false)
+    setHighlight(GP.BUTTON, false)
+    setHighlight(GP.BARBER_BUTTON, false)
 end
 
 function GP.OnLoadingEnd()
     GP.InstallButton()
+    GP.InstallBarberButton()
+end
+
+----------------------------------------------------------------
+-- Helm and cloak settings, barber features
+----------------------------------------------------------------
+
+-- VISIBLE_EQUIPMENT_UPDATED: sent on login and twice on every toggle of
+-- Show Helm, Show Cloak or the heraldry. The getters lag behind it.
+function GP.OnVisibleEquipment(showHelm, showCloak, showCloakHeraldry)
+    if type(showHelm) ~= "boolean" or type(showCloak) ~= "boolean" or type(showCloakHeraldry) ~= "boolean" then return end
+    GP.visibility = { helm = showHelm, cloak = showCloak, heraldry = showCloakHeraldry }
+end
+
+function GP.OnBarberOpen()
+    GP.InstallBarberButton()
+end
+
+-- INTERACT_BARBERSHOP_FEATURE_UPDATE: while a barber is open, every feature
+-- in the order of pregame_features.csv for the career line and gender, each
+-- with its allowed values and curValue (a zero-based index).
+function GP.OnBarberFeatures(featuresData)
+    GP.InstallBarberButton()
+    if type(featuresData) ~= "table" then return end
+    local name = playerName()
+    local line = whole(get(GameData, "Player", "career", "line"))
+    local gender = whole(get(GameData, "Player", "gender"))
+    if not name or name == "" or not line or not gender then return end
+    local values = {}
+    for i = 1, #featuresData do
+        local value = whole(get(featuresData, i, "curValue"))
+        if not value then return end
+        values[i] = value
+    end
+    if #values == 0 then return end
+    local capture = { line = line, gender = gender, values = values }
+    local record = GP.looks[name] or {}
+    record.shown = capture
+    -- With no changes tried, the mirror shows what the character wears.
+    if call(BarbershopHaveFeaturesChanged) == false or not record.worn then record.worn = capture end
+    GP.looks[name] = record
+end
+
+-- INTERACT_BARBERSHOP_RESULT: on SUCCESS the character bought the looks in
+-- the mirror.
+function GP.OnBarberResult(code)
+    local success = get(GameData, "BarberShopMessage", "SUCCESS")
+    if code == nil or code ~= success then return end
+    local name = playerName()
+    local record = name and GP.looks[name]
+    if record and record.shown then record.worn = record.shown end
 end
 
 ----------------------------------------------------------------
@@ -412,8 +585,17 @@ function GP.Initialize()
         pcall(LibSlash.RegisterSlashCmd, "gearpreview", function() GP.Toggle() end)
         pcall(LibSlash.RegisterSlashCmd, "gp", function() GP.Toggle() end)
     end
-    local event = get(SystemData, "Events", "LOADING_END")
-    if event ~= nil and type(RegisterEventHandler) == "function" then
-        pcall(RegisterEventHandler, event, "GearPreview.OnLoadingEnd")
+    local handlers = {
+        LOADING_END = "GearPreview.OnLoadingEnd",
+        VISIBLE_EQUIPMENT_UPDATED = "GearPreview.OnVisibleEquipment",
+        INTERACT_BARBERSHOP_OPEN = "GearPreview.OnBarberOpen",
+        INTERACT_BARBERSHOP_FEATURE_UPDATE = "GearPreview.OnBarberFeatures",
+        INTERACT_BARBERSHOP_RESULT = "GearPreview.OnBarberResult",
+    }
+    for name, handler in pairs(handlers) do
+        local event = get(SystemData, "Events", name)
+        if event ~= nil and type(RegisterEventHandler) == "function" then
+            pcall(RegisterEventHandler, event, handler)
+        end
     end
 end

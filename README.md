@@ -2,7 +2,7 @@
 
 Source for the GearPreview addon for Return of Reckoning. The addon package is the `GearPreview/` folder; the site builds each release from it.
 
-GearPreview adds a **scryTome Gear Preview** button to the character window. It builds a link to the [scryTome Gear Preview](https://scrytome.org/ror-gear-preview/) with your career, your worn items, their dyes and any appearance you applied to them, so you can see your look in a browser and share it.
+GearPreview adds a **scryTome Gear Preview** button to the character window and the barber window. It builds a link to the [scryTome Gear Preview](https://scrytome.org/ror-gear-preview/) with your career, your worn items, their dyes and any appearance you applied to them, so you can see your look in a browser and share it.
 
 ## Install
 
@@ -10,7 +10,7 @@ Install it from the [addon site](https://addons.returnofreckoning.com/addons/gea
 
 ## Use
 
-1. Open the character window and press the scryTome Gear Preview icon in its title bar, or type `/gp`.
+1. Open the character window and press the scryTome Gear Preview icon in its title bar, or type `/gp`. At a barber, the same icon sits right of Reset and Check Out.
 2. The window shows your name, how many items the link holds and the link, already selected. Press Ctrl+A, Ctrl+C.
 3. Paste the link into a browser.
 
@@ -23,13 +23,13 @@ The window closes with the button, `/gp`, Close or Escape.
 - Both dye colours of each item.
 - An appearance applied to an item: the figure wears that look; the item stays the one you wear.
 
-Not carried: face, hair, beard, tusks and the other creator choices (the game does not let addons read them), the helm and cloak show/hide settings, and heraldry.
+The addon also reads your Show Helm, Show Cloak and heraldry settings, and your face, hair and the other creator choices when a barber is open, since the barber is the only place the game reports them. The page does not read them yet, so this version leaves them out of the link. Barber looks stay until you log out or reload the UI.
 
-The addon reads the character window's data and nothing else. It saves nothing, sends nothing and writes no files.
+The addon reads the game's equipment data, the helm and cloak settings and what the barber reports. It saves nothing, sends nothing and writes no files.
 
 ## Status
 
-The page reads these links since 2026-11-01: it opens your character with the worn items, dyes and appearances the link carries.
+The page reads these links since 2026-11-01 and opens your character with the worn items, dyes and appearances the link carries.
 
 The link grammar and the measured slot and career tables are in [docs/link.md](docs/link.md).
 
